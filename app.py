@@ -237,7 +237,6 @@ def render_header_stats(df: pd.DataFrame) -> None:
         """
 ### Willkommen 👋
 Trainiere Fragen im **Lernmodus** oder starte eine vollständige **Prüfungssimulation**.
-Alle Daten kommen aus einer CSV-Datei, ohne Datenbank oder externe Services.
 """
     )
 
@@ -444,7 +443,7 @@ def show_exam_results(df: pd.DataFrame) -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="Prüfungstrainer", page_icon="🧠", layout="wide")
+    st.set_page_config(page_title="Prüfungstrainer", page_icon="📖", layout="wide")
     init_state()
 
     st.markdown(
