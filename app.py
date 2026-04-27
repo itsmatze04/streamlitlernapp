@@ -190,6 +190,8 @@ def init_state() -> None:
         "exam_finished": False,
         "pass_threshold": 60,
         "filter_signature": "",
+        "learning_indices": [],
+        "learning_indices_signature": "",
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -199,6 +201,8 @@ def init_state() -> None:
 def reset_learning() -> None:
     st.session_state.learning_pointer = 0
     st.session_state.learn_checked = False
+    st.session_state.learning_indices = []
+    st.session_state.learning_indices_signature = ""
 
 
 def reset_exam() -> None:
@@ -237,6 +241,7 @@ def render_header_stats(df: pd.DataFrame) -> None:
         """
 ### Willkommen 👋
 Trainiere Fragen im **Lernmodus** oder starte eine vollständige **Prüfungssimulation**.
+Alle Daten kommen aus einer CSV-Datei, ohne Datenbank oder externe Services.
 """
     )
 
@@ -285,9 +290,23 @@ def render_learning_mode(df: pd.DataFrame, random_order: bool) -> None:
         st.info("Keine Fragen nach aktuellem Filter verfügbar.")
         return
 
-    indices = list(df.index)
+    base_indices = list(df.index)
+    signature = ",".join(map(str, base_indices))
+
     if random_order:
-        random.Random(42).shuffle(indices)
+        needs_new_order = (
+            not st.session_state.learning_indices
+            or st.session_state.learning_indices_signature != signature
+            or len(st.session_state.learning_indices) != len(base_indices)
+        )
+        if needs_new_order:
+            st.session_state.learning_indices = random.sample(base_indices, k=len(base_indices))
+            st.session_state.learning_indices_signature = signature
+        indices = st.session_state.learning_indices
+    else:
+        indices = base_indices
+        st.session_state.learning_indices = base_indices
+        st.session_state.learning_indices_signature = signature
 
     ptr = min(st.session_state.learning_pointer, len(indices) - 1)
     st.session_state.learning_pointer = ptr
@@ -443,7 +462,7 @@ def show_exam_results(df: pd.DataFrame) -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="Prüfungstrainer", page_icon="📖", layout="wide")
+    st.set_page_config(page_title="Prüfungstrainer", page_icon="🧠", layout="wide")
     init_state()
 
     st.markdown(
