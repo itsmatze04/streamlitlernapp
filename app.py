@@ -52,11 +52,17 @@ def normalize_text(value: object) -> str:
     return " ".join(text.split())
 
 
-def load_questions(fallback_path: str = "data/questions.csv") -> pd.DataFrame:
+def load_questions(file_obj=None, fallback_path: str = "data/questions.csv") -> pd.DataFrame:
+    if file_obj is not None:
+        try:
+            return pd.read_csv(file_obj)
+        except pd.errors.EmptyDataError as e:
+            raise ValueError("Die hochgeladene CSV ist leer.") from e
+
     path = Path(fallback_path)
     if not path.exists():
         raise FileNotFoundError(
-            f"Standarddatei nicht gefunden: {fallback_path}. Bitte Datei im Repository anlegen."
+            f"Standarddatei nicht gefunden: {fallback_path}. Bitte Datei anlegen oder CSV hochladen."
         )
     try:
         return pd.read_csv(path)
@@ -264,13 +270,8 @@ def render_answer_widget(row: pd.Series, options: List[Tuple[str, str]], key_pre
         selected = st.radio("Antwort auswählen", labels, key=f"{key_prefix}_single")
         return {selected.split(":", 1)[0]}
     if q_type == "multiple_choice":
-        st.write("Antworten auswählen")
-        selected_codes: Set[str] = set()
-        for code, label in options:
-            checked = st.checkbox(f"{code}: {label}", key=f"{key_prefix}_multi_{code}")
-            if checked:
-                selected_codes.add(code)
-        return selected_codes
+        selected = st.multiselect("Antworten auswählen", labels, key=f"{key_prefix}_multi")
+        return {item.split(":", 1)[0] for item in selected}
 
     selected = st.radio("Richtig oder Falsch?", labels[:2], key=f"{key_prefix}_tf")
     return {selected.split(":", 1)[0]}
@@ -439,6 +440,13 @@ def show_exam_results(df: pd.DataFrame) -> None:
 
 
 
+def get_source_signature(uploaded_file) -> str:
+    if uploaded_file is None:
+        return "default:data/questions.csv"
+    name = getattr(uploaded_file, "name", "upload.csv")
+    size = getattr(uploaded_file, "size", 0)
+    return f"upload:{name}:{size}"
+
 def main() -> None:
     st.set_page_config(page_title="Prüfungstrainer", page_icon="🧠", layout="wide")
     init_state()
@@ -457,9 +465,10 @@ h1, h2, h3 {letter-spacing: 0.2px;}
 
     with st.sidebar:
         st.header("Einstellungen")
+        uploaded = st.file_uploader("Optionale CSV hochladen", type=["csv"])
 
     try:
-        raw_df = load_questions()
+        raw_df = load_questions(uploaded)
     except FileNotFoundError as e:
         st.error(str(e))
         st.stop()
@@ -501,7 +510,8 @@ h1, h2, h3 {letter-spacing: 0.2px;}
         random_order = st.toggle("Zufällige Reihenfolge", value=True)
         st.session_state.pass_threshold = 60
 
-    signature = f"{mode}|{topic}|{difficulty}|{qtype}|{random_order}"
+    source_sig = get_source_signature(uploaded)
+    signature = f"{source_sig}|{mode}|{topic}|{difficulty}|{qtype}|{random_order}"
     maybe_reset_on_context_change(signature)
 
     filtered = apply_filters(questions_df, topic, difficulty, qtype)
