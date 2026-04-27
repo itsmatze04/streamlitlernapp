@@ -1,0 +1,4 @@
+question_text,question_type,topic,difficulty,explanation,option_a,option_b,option_c,option_d,correct_answers
+"Was ist die Hauptstadt von Deutschland?",single_choice,Geografie,leicht,"Berlin ist die Hauptstadt Deutschlands.",Berlin,München,Hamburg,Köln,A
+"Welche Zahlen sind Primzahlen?",multiple_choice,Mathematik,mittel,"2 und 5 sind Primzahlen.",2,4,5,8,"A;C"
+"Python ist eine Programmiersprache.",richtig/falsch,Informatik,leicht,"Diese Aussage ist richtig.",Richtig,Falsch,,,Richtig
